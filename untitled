@@ -1,0 +1,16 @@
+actual_x = 10.0 # actual x-coordinate in meters
+actual_y = 20.0 # actual y-coordinate in meters
+predicted_x = 12.0 # predicted x-coordinate in meters
+predicted_y = 19.0 # predicted y-coordinate in meters
+
+# Compute the Euclidean distance between the actual and predicted coordinates
+distance = ((actual_x - predicted_x)**2 + (actual_y - predicted_y)**2)**0.5
+
+if distance <= 3:
+    print("Prediction is correct!")
+else:
+    print("Prediction is incorrect. The actual coordinates are ({},{}), while the predicted coordinates are ({},{}).".format(actual_x, actual_y, predicted_x, predicted_y))
+    if distance > 3:
+        print("The predicted coordinates are too far away from the actual coordinates.")
+    else:
+        print("The predicted coordinates are too close to the actual coordinates.")
