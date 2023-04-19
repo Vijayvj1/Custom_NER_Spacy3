@@ -38,3 +38,24 @@ class TestNpEncoder:
         result = json.dumps(data, cls=NpEncoder)
         expected = '{"int": 42, "float": 3.14, "array": [1, 2, 3]}'
         assert result == expected
+        
+        
+        from datetime import datetime
+from my_app import api  # Assuming 'my_app' is the name of your Flask app
+
+# Test cases for the API model
+def test_api_model():
+    # Create a test instance of the model
+    test_model = {
+        'name': 'John Doe',
+        'address': '123 Main St.',
+        'date_updated': datetime.now().strftime('%a, %d %b %Y %H:%M:%S %Z')
+    }
+    
+    # Validate the model schema
+    assert api.validate(test_model, api.model('Model', {
+        'name': api.fields.String,
+        'address': api.fields.String,
+        'date_updated': api.fields.DateTime(dt_format='rfc822')
+    }))
+
