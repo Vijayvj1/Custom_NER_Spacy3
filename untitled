@@ -14,3 +14,27 @@ else:
         print("The predicted coordinates are too far away from the actual coordinates.")
     else:
         print("The predicted coordinates are too close to the actual coordinates.")
+
+
+import json
+import numpy as np
+
+class TestNpEncoder:
+    def test_npencoder_integer(self):
+        encoder = NpEncoder()
+        assert encoder.default(np.int64(42)) == 42
+
+    def test_npencoder_float(self):
+        encoder = NpEncoder()
+        assert encoder.default(np.float64(3.14)) == 3.14
+
+    def test_npencoder_ndarray(self):
+        encoder = NpEncoder()
+        arr = np.array([1, 2, 3])
+        assert encoder.default(arr) == arr.tolist()
+
+    def test_json_dump_with_npencoder(self):
+        data = {'int': np.int64(42), 'float': np.float64(3.14), 'array': np.array([1, 2, 3])}
+        result = json.dumps(data, cls=NpEncoder)
+        expected = '{"int": 42, "float": 3.14, "array": [1, 2, 3]}'
+        assert result == expected
