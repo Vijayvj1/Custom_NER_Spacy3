@@ -1,55 +1,15 @@
-import numpy as np
-from scipy.spatial.distance import cdist
 import pandas as pd
-from multiprocessing import Pool, cpu_count
 
-def calc_distances(metric):
-    if metric == 'jaccard':
-        # convert data to binary format for jaccard distance
-        a_bin = (a > np.median(a)).astype(int)
-        b_bin = (b > np.median(b, axis=0)).astype(int)
-        distances = cdist(a_bin, b_bin, metric=metric)[0]
-    else:
-        distances = cdist(a, b, metric=metric)[0]
-    return (metric, distances)
+dict = {"loc" : (10,20)}
 
-if __name__ == '__main__':
-    # define the arrays
-    a = np.array([[1, 2, 3,5]])
-    b = np.random.uniform(low=4, high=6, size=(2000000, 4))
-    coord_data = np.random.uniform(low=4, high=6, size=(2000000, 2))
+# Create a DataFrame from the dictionary
+df = pd.DataFrame.from_dict(dict, orient='index', columns=['loc'])
 
-    # define the distance measures and threshold values
-    dist_measures = ['euclidean', 'cosine', 'jaccard', 'cityblock', 'minkowski', 'hamming']
-    dis_val = {
-        'euclidean': 5,
-        'cosine': 0.8,
-        'jaccard': 0.8,
-        'cityblock': 100,
-        'minkowski': 100,
-        'hamming': 0.8
-    }
+# Split the tuple values of loc into separate columns
+df[['loc_x', 'loc_y']] = pd.DataFrame(df.loc['loc'].tolist(), index=df.index)
 
-    # create a pool of worker processes
-    pool = Pool(cpu_count())
+# Drop the original 'loc' column
+df.drop('loc', axis=0, inplace=True)
 
-    # calculate the pairwise distances for each measure using multiple processes
-    results = dict(pool.map(calc_distances, dist_measures))
-
-    # close the pool of worker processes
-    pool.close()
-    pool.join()
-
-    # create a pandas dataframe from the results dictionary and add coordinate columns
-    df = pd.DataFrame.from_dict(results)
-    df['x'] = coord_data[:, 0]
-    df['y'] = coord_data[:, 1]
-
-    # add new columns based on the threshold values for each distance measure
-    for measure in dist_measures:
-        if measure == 'cosine':
-            df[f'{measure}_isValid'] = df[measure].apply(lambda x: x if x >= dis_val[measure] else None)
-        elif measure == 'jaccard':
-            df[f'{measure}_isValid'] = df[measure].apply(lambda x: x if x <= dis_val[measure] else None)
-        else:
-            df[f'{measure}_isValid'] = df[measure].apply(lambda x: x if x <= dis_val[measure] else None)
+# Print the resulting DataFrame
+print(df)
