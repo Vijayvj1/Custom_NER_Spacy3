@@ -1,149 +1,55 @@
-import pandas as pd
-from scipy.spatial.distance import euclidean, cosine, jaccard, cityblock, minkowski, hamming
-from sklearn.model_selection import train_test_split
-import matplotlib.pyplot as plt
-import pandas as pd
-from scipy.spatial.distance import cdist
-import multiprocessing
-from functools import partial
 import numpy as np
-import concurrent.futures
-from tqdm import tqdm
-# import mapply
-# mapply.init(n_workers=4)
-import warnings
+from scipy.spatial.distance import cdist
+import pandas as pd
+from multiprocessing import Pool, cpu_count
 
-warnings.filterwarnings("ignore")
+def calc_distances(metric):
+    if metric == 'jaccard':
+        # convert data to binary format for jaccard distance
+        a_bin = (a > np.median(a)).astype(int)
+        b_bin = (b > np.median(b, axis=0)).astype(int)
+        distances = cdist(a_bin, b_bin, metric=metric)[0]
+    else:
+        distances = cdist(a, b, metric=metric)[0]
+    return (metric, distances)
 
-data = pd.read_csv("data_preproces.csv")
-data = data.drop(['scan_count', 'scan_id', 'z'], axis=1)
-data = data.sample(frac=1).abs()
+if __name__ == '__main__':
+    # define the arrays
+    a = np.array([[1, 2, 3,5]])
+    b = np.random.uniform(low=4, high=6, size=(2000000, 4))
+    coord_data = np.random.uniform(low=4, high=6, size=(2000000, 2))
 
-data = data.drop(data[data['x'] == 8][data['y'] == 1].index[:2000], axis=0)
-features = data.iloc[:, :-2]
-targets = data.iloc[:, -2:]
+    # define the distance measures and threshold values
+    dist_measures = ['euclidean', 'cosine', 'jaccard', 'cityblock', 'minkowski', 'hamming']
+    dis_val = {
+        'euclidean': 5,
+        'cosine': 0.8,
+        'jaccard': 0.8,
+        'cityblock': 100,
+        'minkowski': 100,
+        'hamming': 0.8
+    }
 
-x_train, x_test, y_train, y_test = train_test_split(features, targets, test_size=0.2, random_state=905)
+    # create a pool of worker processes
+    pool = Pool(cpu_count())
 
+    # calculate the pairwise distances for each measure using multiple processes
+    results = dict(pool.map(calc_distances, dist_measures))
 
-def get_distance(data_algo):
-    data, algo = data_algo
-    if algo == 'euclidean':
-        distance = x_train.apply(lambda row: euclidean(row, data), axis=1)
-    elif algo == 'jaccard':
-        distance = x_train.apply(lambda row: jaccard(row, data), axis=1)
-    elif algo == 'cityblock':
-        distance = x_train.apply(lambda row: cityblock(row, data), axis=1)
-    elif algo == 'hamming':
-        distance = x_train.apply(lambda row: hamming(row, data), axis=1)
-    elif algo == 'minkowski':
-        distance = x_train.apply(lambda row: minkowski(row, data), axis=1)
+    # close the pool of worker processes
+    pool.close()
+    pool.join()
 
-    return distance
+    # create a pandas dataframe from the results dictionary and add coordinate columns
+    df = pd.DataFrame.from_dict(results)
+    df['x'] = coord_data[:, 0]
+    df['y'] = coord_data[:, 1]
 
-
-algo_thresholds = [60, 144, 100, .65, .75]
-algo_list = ['euclidean', 'minkowski', 'cityblock', 'hamming', 'jaccard']
-
-
-def predict(distances):
-    points = []
-
-    for idx, dist in enumerate(distances):
-        dist = dist.values
-        dist_thresh = algo_thresholds[idx]
-
-        idexes = [i for i in range(len(dist)) if dist[i] < dist_thresh]
-        closer_points = y_train.iloc[idexes, :]
-
-        if len(closer_points) == 0:
-            points.append((np.nan, np.nan))
-            continue
+    # add new columns based on the threshold values for each distance measure
+    for measure in dist_measures:
+        if measure == 'cosine':
+            df[f'{measure}_isValid'] = df[measure].apply(lambda x: x if x >= dis_val[measure] else None)
+        elif measure == 'jaccard':
+            df[f'{measure}_isValid'] = df[measure].apply(lambda x: x if x <= dis_val[measure] else None)
         else:
-            df = closer_points.groupby(['x', 'y']).size().reset_index(name='count')
-            df_sorted = df.sort_values('count', ascending=False)
-            x = df_sorted.iloc[0].x
-            y = df_sorted.iloc[0].y
-            points.append((x, y))
-
-    return points
-
-
-def get_error_score(y_true, y_predictions):
-    error_scores = []
-    for y_pred in y_predictions:
-        if y_pred[0] == np.nan or y_pred[1] == np.nan:
-            error = (np.nan, np.nan)
-        else:
-            error = euclidean(y_true, y_pred)
-        error_scores.append(error)
-    return error_scores
-
-
-final_df = pd.DataFrame(columns=['14:91:82:1b:60:b4', '6c:c4:9f:1d:b7:70',
-                                 '6c:c4:9f:6b:eb:50', '6c:c4:9f:6d:f3:50', '6c:c4:9f:ef:30:a0',
-                                 '6c:c4:9f:ef:30:b0', '6c:c4:9f:ef:8b:10', '6c:c4:9f:ef:e4:10',
-                                 '6c:c4:9f:f0:14:80', '6c:c4:9f:f0:14:90', '6c:c4:9f:f1:1b:f0',
-                                 '6c:c4:9f:f1:48:e0', '6c:c4:9f:f1:48:f0', '6c:c4:9f:f1:c4:d0', 'ground_truth',
-                                 'euclidean_pred', 'minkowski_pred', 'cityblock_pred', 'hamming_pred', 'jaccard_pred',
-                                 'euclidean_score', 'minkowski_score', 'cityblock_score', 'hamming_score',
-                                 'jaccard_score'
-                                 ])
-
-
-def split_df(df, num):
-    chunk_size = len(df) // num + 1
-    return [df.iloc[i:i + chunk_size] for i in range(0, len(df), chunk_size)]
-
-
-if __name__ == "__main__":
-
-    for idx in tqdm(range(len(x_test))):
-
-        new_data = x_test.iloc[idx]
-        ground_truth = (y_test.iloc[idx].x, y_test.iloc[idx].y)
-
-        args = []
-
-        for alg in algo_list:
-            args.append((new_data, alg))
-
-        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
-            distances = list(executor.map(get_distance, args))
-
-        # distances = []
-        # for arg in args:
-        #     pool = multiprocessing.Pool(8)
-        #     d = pool.map(get_distance,arg)
-        #     dista = pd.concat(pool.map(get_distance,arg))
-        #     pool.close()
-        #     pool.join()
-        #     distances.append(dista)
-
-        # distances = []
-        # for arg in args:
-        #     d = get_distance(arg[0],arg[1])
-        #     distances.append(d)
-
-        points = predict(distances)
-        errors = get_error_score(ground_truth, points)
-        print(ground_truth, points)
-        new_row = {
-            '14:91:82:1b:60:b4': new_data['14:91:82:1b:60:b4'], '6c:c4:9f:1d:b7:70': new_data['6c:c4:9f:1d:b7:70'],
-            '6c:c4:9f:6b:eb:50': new_data['6c:c4:9f:6b:eb:50'], '6c:c4:9f:6d:f3:50': new_data['6c:c4:9f:6d:f3:50'],
-            '6c:c4:9f:ef:30:a0': new_data['6c:c4:9f:ef:30:a0'],
-            '6c:c4:9f:ef:30:b0': new_data['6c:c4:9f:ef:30:b0'], '6c:c4:9f:ef:8b:10': new_data['6c:c4:9f:ef:8b:10'],
-            '6c:c4:9f:ef:e4:10': new_data['6c:c4:9f:ef:e4:10'],
-            '6c:c4:9f:f0:14:80': new_data['6c:c4:9f:f0:14:80'], '6c:c4:9f:f0:14:90': new_data['6c:c4:9f:f0:14:90'],
-            '6c:c4:9f:f1:1b:f0': new_data['6c:c4:9f:f1:1b:f0'],
-            '6c:c4:9f:f1:48:e0': new_data['6c:c4:9f:f1:48:e0'], '6c:c4:9f:f1:48:f0': new_data['6c:c4:9f:f1:48:f0'],
-            '6c:c4:9f:f1:c4:d0': new_data['6c:c4:9f:f1:c4:d0'],
-            'ground_truth': ground_truth,
-            'euclidean_pred': points[0], 'minkowski_pred': points[1], 'cityblock_pred': points[2],
-            'hamming_pred': points[3], 'jaccard_pred': points[4],
-            'euclidean_score': errors[0], 'minkowski_score': errors[1], 'cityblock_score': errors[2],
-            'hamming_score': errors[3], 'jaccard_score': errors[4]}
-
-        final_df = final_df.append(new_row, ignore_index=True)
-
-    final_df.to_csv('prediction_based_on_similarity.csv')
+            df[f'{measure}_isValid'] = df[measure].apply(lambda x: x if x <= dis_val[measure] else None)
