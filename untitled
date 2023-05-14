@@ -1,4 +1,14 @@
-output = []
-for item in input:
-    if item in dict_ref.values():
-        output.append(dict_ref.keys()[dict_ref.values().index(item)])
+a_tuple = [(1, 1), (2, 2), (3, 4), (1,1)]
+dict_ref = {"a": [(1, 1), (2, 2)], "b": [(3, 4)], "c": [(8, 7)]}
+
+def find_keys(a_tuple, dict_ref):
+    output = []
+    for item in a_tuple:
+        for key, value in dict_ref.items():
+            if item in value:
+                output.append(key)
+                break
+    return output
+
+output = find_keys(a_tuple, dict_ref)
+print(output)
