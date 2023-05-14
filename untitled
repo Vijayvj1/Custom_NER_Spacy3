@@ -1,25 +1,23 @@
+import numpy as np
+from sklearn.linear_model import HuberRegressor
+
+# Load the data
+data = np.loadtxt("data.csv", delimiter=",")
+
 # Split the data into training and test sets
-X_train, X_test, y_train, y_test = train_test_split(data, data["target"], test_size=0.25)
+X_train, X_test, y_train, y_test = train_test_split(data[:, :-1], data[:, -1], test_size=0.25)
 
-# Create the XGBoost classifier
-clf = xgb.XGBClassifier()
+# Create the HuberRegressor model
+clf = HuberRegressor(alpha=1.0)
 
-# Define the KFold cross-validation object
-kf = KFold(n_splits=10)
+# Train the model on the training set
+clf.fit(X_train, y_train)
 
-# Perform cross-validation
-cv_scores = []
-for train_index, test_index in kf.split(X_train):
-    # Train the model on the training set
-    clf.fit(X_train[train_index], y_train[train_index])
+# Predict the labels on the test set
+y_pred = clf.predict(X_test)
 
-    # Predict the labels on the test set
-    y_pred = clf.predict(X_train[test_index])
+# Calculate the mean squared error
+mse = mean_squared_error(y_test, y_pred)
 
-    # Calculate the accuracy score
-    accuracy = accuracy_score(y_train[test_index], y_pred)
-
-    cv_scores.append(accuracy)
-
-# Print the average accuracy score
-print("Average accuracy score:", np.mean(cv_scores))
+# Print the mean squared error
+print("Mean squared error:", mse)
