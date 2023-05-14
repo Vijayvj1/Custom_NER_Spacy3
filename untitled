@@ -1,14 +1,17 @@
-a_tuple = [(1, 1), (2, 2), (3, 4), (1,1)]
-dict_ref = {"a": [(1, 1), (2, 2)], "b": [(3, 4)], "c": [(8, 7)]}
-
 def find_keys(a_tuple, dict_ref):
     output = []
     for item in a_tuple:
+        found = False
         for key, value in dict_ref.items():
             if item in value:
                 output.append(key)
+                found = True
                 break
+        if not found:
+            output.append("NA")
     return output
+a_tuple = [(1, 1), (2, 2), (3, 4), (5, 5)]
+dict_ref = {"a": [(1, 1), (2, 2)], "b": [(3, 4)], "c": [(8, 7)]}
 
 output = find_keys(a_tuple, dict_ref)
 print(output)
