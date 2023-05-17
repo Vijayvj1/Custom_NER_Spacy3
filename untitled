@@ -1,40 +1,12 @@
-import pandas as pd
-import numpy as np
+arr1 = [1, 2, 3, 4]
+arr2 = [1, 2, 3, 4, 5, 8]
 
+total_elements = len(arr1)
+matched_elements = 0
 
-df = pd.DataFrame({
-    'A': [0, 0, 0, 0, 0],
-    'B': [90, 90, 90, 90, 90],
-    'C': [80, 80, 80, 80, 80],
-    'D': [80, 80, 80, 80, 80],
-    'E': [0, 0, 0, 0, 0],
-    'F': [90, 90, 90, 90, 90],
-    'G': [80, 80, 80, 80, 80],
-    'H': [80, 80, 80, 80, 80],
-    'I': [0, 0, 0, 0, 0],
-    'J': [90, 90, 90, 90, 90],
-    'K': [80, 80, 80, 80, 80],
-    'L': [80, 80, 80, 80, 80],
-    'M': [0, 0, 0, 0, 0],
-    'N': [90, 90, 90, 90, 90],
+for i in range(len(arr1)):
+    if arr1[i] == arr2[i]:
+        matched_elements += 1
 
-}
-)
-
-# Constant 1D array for comparison
-constant_array = [0, 90, 80, 80, 0, 90, 80, 80, 0, 90, 80, 80, 0, 90]
-import numpy as np
-
-# Function to determine validity
-def is_valid(row):
-    index_train = np.where(row == 0)[0]
-    test = np.array(constant_array)
-    index_test =  np.where(test == 0)[0]
-    return np.array_equal(index_test,index_train)
-
-
-# Apply validity check and add new column
-df['valid'] = df.apply(is_valid, axis=1)
-
-# Display the updated DataFrame
-print(df)
+similarity = (matched_elements / total_elements) * 100
+print(f'The similarity is: {similarity}%')
