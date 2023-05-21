@@ -1,36 +1,26 @@
-import pandas as pd
+from collections import Counter
 
-# Define the input data
-data = {
-    'AP1': [80, 80, 20],
-    'AP2': [10, 20, 30],
-    'AP3': [60, 60, 60]
-}
+def find_most_frequent_mean(arr, target_range=0.5):
+    rounded_arr = [round(num) for num in arr]
+    counts = Counter(rounded_arr)
+    max_count = max(counts.values())
+    if max_count <= 1:
+        print("No Frequent Items Found")
+        arr_sort = sorted(arr)
+        first_two_items = arr_sort[:2]
+        mean_values = sum(first_two_items) / len(first_two_items)
+        
+    else:
+        most_frequent_items = [num for num, count in counts.items() if count == max_count]
+        
+        indices = [i for i, num in enumerate(rounded_arr) if num in most_frequent_items]
+        value_list_freq = [arr[i] for i in indices]
+        mean_values = sum(value_list_freq)/len(value_list_freq)
+    
+    return mean_values
 
-# Create a DataFrame from the input data
-df = pd.DataFrame(data)
-
-# Set the columns of input as index
-df = df.set_index(pd.Index(['AP1', 'AP2', 'AP3']))
-
-# Create an empty dictionary to store the frequency counts
-freq_counts = {}
-
-# Iterate over the columns of the DataFrame
-for col in df.columns:
-    # Count the frequency of each value in the column
-    counts = df[col].value_counts().to_dict()
-    freq_counts[col] = counts
-
-# Create a new DataFrame from the frequency counts dictionary
-output_df = pd.DataFrame.from_dict(freq_counts, orient='columns')
-
-# Fill missing values with 0
-output_df = output_df.fillna(0)
-
-# Reorder the columns based on ascending order
-output_df = output_df.reindex(sorted(output_df.columns), axis=1)
-
-# Print the output DataFrame
-print(output_df)
+# Example usage
+arr = [2,2.9,2,2.7,2.9]
+result = find_most_frequent_mean(arr, target_range=0.5)
+print(result)
 
