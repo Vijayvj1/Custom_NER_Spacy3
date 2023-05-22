@@ -1,26 +1,27 @@
-from collections import Counter
+def get_maximum_occurred(strings):
+    count_dict = {}
+    max_count = 0
 
-def find_most_frequent_mean(arr, target_range=0.5):
-    rounded_arr = [round(num) for num in arr]
-    counts = Counter(rounded_arr)
-    max_count = max(counts.values())
-    if max_count <= 1:
-        print("No Frequent Items Found")
-        arr_sort = sorted(arr)
-        first_two_items = arr_sort[:2]
-        mean_values = sum(first_two_items) / len(first_two_items)
-        
-    else:
-        most_frequent_items = [num for num, count in counts.items() if count == max_count]
-        
-        indices = [i for i, num in enumerate(rounded_arr) if num in most_frequent_items]
-        value_list_freq = [arr[i] for i in indices]
-        mean_values = sum(value_list_freq)/len(value_list_freq)
-    
-    return mean_values
+    # Count occurrences of each string
+    for string in strings:
+        if string in count_dict:
+            count_dict[string] += 1
+        else:
+            count_dict[string] = 1
+
+        # Update the maximum count
+        if count_dict[string] > max_count:
+            max_count = count_dict[string]
+
+    # Find the string(s) with the maximum count
+    max_occurred_strings = []
+    for string, count in count_dict.items():
+        if count == max_count:
+            max_occurred_strings.append(string)
+
+    return max_occurred_strings
 
 # Example usage
-arr = [2,2.9,2,2.7,2.9]
-result = find_most_frequent_mean(arr, target_range=0.5)
-print(result)
-
+string_list = ["apple", "banana"]
+max_occurred = get_maximum_occurred(string_list)
+print("Max occurred string(s):", max_occurred)
