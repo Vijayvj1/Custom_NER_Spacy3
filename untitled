@@ -1,24 +1,13 @@
 from collections import Counter
-def find_most_common_value(float_list):
-    counter = Counter(float_list)
-    most_common_value, _ = counter.most_common(1)[0]
-    return int(most_common_value)
-    
 
-def calculate_mean_near_value(float_list, target_value, range_tolerance):
-    # Filter the values within the range tolerance of the target value
-    matching_values = [value for value in float_list if abs(value - target_value) <= range_tolerance]
+numbers = [3.4, 3.5, 3.6, 7.1, 7.2, 7.5]
+rounded_numbers = [round(num) for num in numbers]
 
-    # Calculate the mean of the matching values
-    mean = sum(matching_values) / len(matching_values)
+counts = Counter(rounded_numbers)
+most_common = counts.most_common()
 
-    return round(mean, 2)  # Round the mean to 2 decimal places
+max_value = most_common[0][0]
 
-# Example usage
-float_values = [3.5, 3.6, 3.7, 4, 8.8, 8.9, 8.0, 8.2, 8.3,8.8, 8.9, 8.0, 8.2, 8.3, 9]
-target_value = find_most_common_value(float_values) 
-print("Target  Value:",target_value)# Specify the target value
-range_tolerance = 0.5  # Specify the range tolerance
+filtered_numbers = [num for num in numbers if max_value-1 <= num <= max_value+0.5]
 
-mean_of_near_values = calculate_mean_near_value(float_values, target_value, range_tolerance)
-print(mean_of_near_values)
+(filtered_numbers)
