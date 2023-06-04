@@ -1,15 +1,24 @@
-The Received Signal Strength Indicator (RSSI) is a measurement used to quantify the power level of a received radio signal. It is commonly used in mobile communication systems to estimate the signal quality and strength between a mobile device and a base station.
+from collections import Counter
+def find_most_common_value(float_list):
+    counter = Counter(float_list)
+    most_common_value, _ = counter.most_common(1)[0]
+    return int(most_common_value)
+    
 
-The RSSI value can vary between different mobile phones, even if they are in the same location and connected to the same network. There are several reasons for this variation.
+def calculate_mean_near_value(float_list, target_value, range_tolerance):
+    # Filter the values within the range tolerance of the target value
+    matching_values = [value for value in float_list if abs(value - target_value) <= range_tolerance]
 
-Hardware Differences: Different mobile phone models can have antenna design, sensitivity, and radio circuitry variations. These hardware differences can result in variations in the way the signal is received and measured, leading to differences in RSSI values.
+    # Calculate the mean of the matching values
+    mean = sum(matching_values) / len(matching_values)
 
-Software Algorithms: Mobile phone manufacturers may implement their own proprietary algorithms to calculate and interpret RSSI values. These algorithms can vary between different models, resulting in differences in how the RSSI is reported.
+    return round(mean, 2)  # Round the mean to 2 decimal places
 
-Signal Interference: The RSSI value can be affected by various environmental factors, such as distance from the base station, obstructions (e.g., buildings or trees), interference from other devices, and network congestion. These factors can change over time and can lead to fluctuations in the RSSI values between different mobile phones.
+# Example usage
+float_values = [3.5, 3.6, 3.7, 4, 8.8, 8.9, 8.0, 8.2, 8.3,8.8, 8.9, 8.0, 8.2, 8.3, 9]
+target_value = find_most_common_value(float_values) 
+print("Target  Value:",target_value)# Specify the target value
+range_tolerance = 0.5  # Specify the range tolerance
 
-Firmware Updates: Mobile phone manufacturers often release firmware updates that can optimize the performance of the device, including signal reception. These updates can result in changes to how the RSSI is measured and reported, leading to variations between models or even versions of the same model.
-
-It's worth noting that RSSI is just one metric used to estimate signal strength and quality. Mobile phones also consider other factors such as signal-to-noise ratio (SNR) and channel conditions to make decisions about network connectivity and handovers between base stations.
-
-In summary, differences in RSSI values between different mobile phone models can be attributed to hardware variations, software algorithms, signal interference, and firmware updates. These variations are normal and do not necessarily indicate a problem with the device.
+mean_of_near_values = calculate_mean_near_value(float_values, target_value, range_tolerance)
+print(mean_of_near_values)
