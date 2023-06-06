@@ -37,3 +37,33 @@ def simulate_requests():
         t.join()
 
 simulate_requests()
+
+import transaction
+
+# API endpoint for getting the auto-increment ID
+def get_auto_increment_id():
+    with transaction.manager:
+        # Perform database operation to get the auto-increment ID
+        # Assign the ID to last_id variable
+        last_id = # Your code to fetch the ID from the database
+
+    return last_id
+
+# Example usage of the API
+def process_request():
+    id = get_auto_increment_id()
+    print(f"Received ID: {id}")
+
+# Simulate concurrent API requests
+def simulate_requests():
+    threads = []
+    for _ in range(5):
+        t = threading.Thread(target=process_request)
+        threads.append(t)
+        t.start()
+
+    for t in threads:
+        t.join()
+
+simulate_requests()
+
