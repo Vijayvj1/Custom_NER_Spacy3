@@ -1,69 +1,32 @@
-import threading
+import re
 
-# Create a lock object
-lock = threading.Lock()
+def calculate_mac_address(num_bssid):
+    if num_bssid <= 0 or num_bssid > 32:
+        raise ValueError("Number of BSSIDs must be within the range of 1 to 32")
 
-# Define a global variable to store the last returned ID
-last_id = None
+    mac_input = input("Enter wired MAC: ")
+    if not re.match(r"([a-fA-F0-9]{2}[:|\-]?){6}", mac_input):
+        raise ValueError("Invalid MAC address format")
 
-# API endpoint for getting the auto-increment ID
-def get_auto_increment_id():
-    global last_id
-    lock.acquire()  # Acquire the lock
-    
-    try:
-        # Perform database operation to get the auto-increment ID
-        # Assign the ID to last_id variable
-        last_id = # Your code to fetch the ID from the database
-        
-        return last_id
-    finally:
-        lock.release()  # Release the lock
+    mac = mac_input.replace(":", "")
 
-# Example usage of the API
-def process_request():
-    id = get_auto_increment_id()
-    print(f"Received ID: {id}")
+    f1 = bin(int(mac[6:], 16))[2:].zfill(24) + "0000"
+    f2 = bin(int(f1[:8], 2) ^ 8)[2:].zfill(8)
+    out = int(f2[4:] + f1[8:], 2)
 
-# Simulate concurrent API requests
-def simulate_requests():
-    threads = []
-    for _ in range(5):
-        t = threading.Thread(target=process_request)
-        threads.append(t)
-        t.start()
+    r0 = hex(out)[2:].zfill(6)
+    r1 = hex(out + num_bssid)[2:].zfill(6)
 
-    for t in threads:
-        t.join()
+    return [
+        f"Radio 0 Base MAC (2.4GHz): {mac[:2]}:{mac[2:4]}:{mac[4:6]}:{r0[:2]}:{r0[2:4]}:{r0[4:6]}",
+        f"Radio 1 Base MAC (5GHz): {mac[:2]}:{mac[2:4]}:{mac[4:6]}:{r1[:2]}:{r1[2:4]}:{r1[4:6]}"
+    ]
 
-simulate_requests()
 
-import transaction
-
-# API endpoint for getting the auto-increment ID
-def get_auto_increment_id():
-    with transaction.manager:
-        # Perform database operation to get the auto-increment ID
-        # Assign the ID to last_id variable
-        last_id = # Your code to fetch the ID from the database
-
-    return last_id
-
-# Example usage of the API
-def process_request():
-    id = get_auto_increment_id()
-    print(f"Received ID: {id}")
-
-# Simulate concurrent API requests
-def simulate_requests():
-    threads = []
-    for _ in range(5):
-        t = threading.Thread(target=process_request)
-        threads.append(t)
-        t.start()
-
-    for t in threads:
-        t.join()
-
-simulate_requests()
-
+try:
+    num_bssid = int(input("Enter the number of BSSIDs: "))
+    mac_addresses = calculate_mac_address(num_bssid)
+    for address in mac_addresses:
+        print(address)
+except ValueError as e:
+    print(f"Error: {str(e)}")
