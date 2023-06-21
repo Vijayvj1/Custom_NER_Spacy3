@@ -1,32 +1,50 @@
-import re
+import math
 
-def calculate_mac_address(num_bssid):
-    if num_bssid <= 0 or num_bssid > 32:
-        raise ValueError("Number of BSSIDs must be within the range of 1 to 32")
+def calculate_coordinates(distances, reference_points):
+    num_points = len(reference_points)
 
-    mac_input = input("Enter wired MAC: ")
-    if not re.match(r"([a-fA-F0-9]{2}[:|\-]?){6}", mac_input):
-        raise ValueError("Invalid MAC address format")
+    # Check if there are enough distances and reference points
+    if len(distances) < num_points or num_points < 2:
+        print("Insufficient distances or reference points.")
+        return None
 
-    mac = mac_input.replace(":", "")
+    A = []
+    b = []
+    
+    # Create the matrices A and b for solving the equations
+    for i in range(num_points - 1):
+        p1 = reference_points[i]
+        p2 = reference_points[i + 1]
+        d1 = distances[i]
+        d2 = distances[i + 1]
 
-    f1 = bin(int(mac[6:], 16))[2:].zfill(24) + "0000"
-    f2 = bin(int(f1[:8], 2) ^ 8)[2:].zfill(8)
-    out = int(f2[4:] + f1[8:], 2)
+        dx = p2[0] - p1[0]
+        dy = p2[1] - p1[1]
+        dr = math.sqrt(dx**2 + dy**2)
+        
+        # Populate the matrices A and b
+        A.append([-2*dx, -2*dy])
+        b.append([d1**2 - d2**2 - p1[0]**2 + p2[0]**2 - p1[1]**2 + p2[1]**2 - dr**2])
 
-    r0 = hex(out)[2:].zfill(6)
-    r1 = hex(out + num_bssid)[2:].zfill(6)
+    # Solve the equations using linear algebra
+    try:
+        result = [round(x[0], 2) for x in solve_linear_equations(A, b)]
+        return result
+    except:
+        print("Error: Unable to calculate coordinates.")
+        return None
 
-    return [
-        f"Radio 0 Base MAC (2.4GHz): {mac[:2]}:{mac[2:4]}:{mac[4:6]}:{r0[:2]}:{r0[2:4]}:{r0[4:6]}",
-        f"Radio 1 Base MAC (5GHz): {mac[:2]}:{mac[2:4]}:{mac[4:6]}:{r1[:2]}:{r1[2:4]}:{r1[4:6]}"
-    ]
+def solve_linear_equations(A, b):
+    # Use numpy to solve the linear equations
+    import numpy as np
+    return np.linalg.lstsq(A, b, rcond=None)[0]
 
+# Example usage
+distances = [10, 7, 5]  # RSSI distances from reference points
+reference_points = [(0, 0), (10, 0), (5, 5)]  # Coordinates of reference points
 
-try:
-    num_bssid = int(input("Enter the number of BSSIDs: "))
-    mac_addresses = calculate_mac_address(num_bssid)
-    for address in mac_addresses:
-        print(address)
-except ValueError as e:
-    print(f"Error: {str(e)}")
+result = calculate_coordinates(distances, reference_points)
+
+if result is not None:
+    x, y = result
+    print(f"Calculated coordinates: ({x}, {y})")
