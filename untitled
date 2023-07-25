@@ -1,50 +1,22 @@
-import math
+import json
+import os
 
-def calculate_coordinates(distances, reference_points):
-    num_points = len(reference_points)
+def extract_json_objects(string_variable, output_folder):
+    # Ensure the output folder exists
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
 
-    # Check if there are enough distances and reference points
-    if len(distances) < num_points or num_points < 2:
-        print("Insufficient distances or reference points.")
-        return None
+    # Find all JSON objects in the string and parse them
+    json_objects = [json.loads(s) for s in string_variable.split() if s.strip().startswith("{") and s.strip().endswith("}")]
 
-    A = []
-    b = []
-    
-    # Create the matrices A and b for solving the equations
-    for i in range(num_points - 1):
-        p1 = reference_points[i]
-        p2 = reference_points[i + 1]
-        d1 = distances[i]
-        d2 = distances[i + 1]
+    # Save each JSON object into separate .json files
+    for idx, obj in enumerate(json_objects):
+        filename = os.path.join(output_folder, f"object_{idx+1}.json")
+        with open(filename, "w") as file:
+            json.dump(obj, file, indent=4)
 
-        dx = p2[0] - p1[0]
-        dy = p2[1] - p1[1]
-        dr = math.sqrt(dx**2 + dy**2)
-        
-        # Populate the matrices A and b
-        A.append([-2*dx, -2*dy])
-        b.append([d1**2 - d2**2 - p1[0]**2 + p2[0]**2 - p1[1]**2 + p2[1]**2 - dr**2])
+# Example usage:
+input_string = '{"name": "John", "age": 30} Some text {"fruit": "apple"} Another text {"city": "New York", "population": 8500000}'
+output_folder = "json_files"
 
-    # Solve the equations using linear algebra
-    try:
-        result = [round(x[0], 2) for x in solve_linear_equations(A, b)]
-        return result
-    except:
-        print("Error: Unable to calculate coordinates.")
-        return None
-
-def solve_linear_equations(A, b):
-    # Use numpy to solve the linear equations
-    import numpy as np
-    return np.linalg.lstsq(A, b, rcond=None)[0]
-
-# Example usage
-distances = [10, 7, 5]  # RSSI distances from reference points
-reference_points = [(0, 0), (10, 0), (5, 5)]  # Coordinates of reference points
-
-result = calculate_coordinates(distances, reference_points)
-
-if result is not None:
-    x, y = result
-    print(f"Calculated coordinates: ({x}, {y})")
+extract_json_objects(input_string, output_folder)
