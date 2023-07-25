@@ -1,22 +1,27 @@
 import json
-import os
+import pandas as pd
+import re
 
-def extract_json_objects(string_variable, output_folder):
-    # Ensure the output folder exists
-    if not os.path.exists(output_folder):
-        os.makedirs(output_folder)
+def convert_json_to_csv(string_variable, output_csv_file):
+    # Use regular expression to find and extract JSON objects from the input string
+    json_objects_str = re.findall(r'\{.*?\}', string_variable)
 
-    # Find all JSON objects in the string and parse them
-    json_objects = [json.loads(s) for s in string_variable.split() if s.strip().startswith("{") and s.strip().endswith("}")]
+    if not json_objects_str:
+        print("No JSON objects found in the input string.")
+        return
 
-    # Save each JSON object into separate .json files
-    for idx, obj in enumerate(json_objects):
-        filename = os.path.join(output_folder, f"object_{idx+1}.json")
-        with open(filename, "w") as file:
-            json.dump(obj, file, indent=4)
+    # Parse JSON objects and create a list of dictionaries
+    json_objects = [json.loads(obj) for obj in json_objects_str]
+
+    # Create a DataFrame with consistent columns
+    df = pd.DataFrame(json_objects)
+
+    # Save DataFrame to a CSV file
+    df.to_csv(output_csv_file, index=False)
 
 # Example usage:
-input_string = '{"name": "John", "age": 30} Some text {"fruit": "apple"} Another text {"city": "New York", "population": 8500000}'
-output_folder = "json_files"
+input_string = '{"name": "John", "age": 30} Some text {"name": "John1", "age": 30} Another text {"name": "John2", "age": 30}'
+output_csv_file = "output.csv"
 
-extract_json_objects(input_string, output_folder)
+convert_json_to_csv(input_string, output_csv_file)
+
