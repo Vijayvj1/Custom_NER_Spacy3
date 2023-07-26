@@ -1,27 +1,38 @@
-import json
-import pandas as pd
-import re
+import numpy as np
+from scipy.optimize import minimize
 
-def convert_json_to_csv(string_variable, output_csv_file):
-    # Use regular expression to find and extract JSON objects from the input string
-    json_objects_str = re.findall(r'\{.*?\}', string_variable)
+def distance(x, y, x0, y0):
+    return np.sqrt((x - x0)**2 + (y - y0)**2)
 
-    if not json_objects_str:
-        print("No JSON objects found in the input string.")
-        return
+def objective_function(point, distances, reference_points):
+    errors = [distance(point[0], point[1], *ref_point) - dist for dist, ref_point in zip(distances, reference_points)]
+    return np.sum(np.square(errors))
 
-    # Parse JSON objects and create a list of dictionaries
-    json_objects = [json.loads(obj) for obj in json_objects_str]
+def trilateration_least_squares(distances, reference_points, max_distance_threshold=100.0):
+    print(distances)
+    # Check if any distance is greater than the threshold
+    if any(dist > max_distance_threshold for dist in distances):
+        raise ValueError("Distances exceed the maximum threshold. Trilateration not possible.")
 
-    # Create a DataFrame with consistent columns
-    df = pd.DataFrame(json_objects)
+    # Initial guess for the unknown point (x, y)
+    initial_guess = np.mean(reference_points, axis=0)
 
-    # Save DataFrame to a CSV file
-    df.to_csv(output_csv_file, index=False)
+    result = minimize(objective_function, initial_guess, args=(distances, reference_points), method='BFGS')
+    return result.x
 
 # Example usage:
-input_string = '{"name": "John", "age": 30} Some text {"name": "John1", "age": 30} Another text {"name": "John2", "age": 30}'
-output_csv_file = "output.csv"
+if __name__ == "__main__":
+    # Given distances and reference points
+    distances = [4.564383857652639, 2.2, 2.83]
+    reference_points = [(5.62,9.11), (8,9), (13,9)]
+    max_distance_threshold = 20
 
-convert_json_to_csv(input_string, output_csv_file)
+    try:
+        # Calculate the trilateration result
+        result = trilateration_least_squares(distances, reference_points, max_distance_threshold)
+        x, y = result
+        print("Trilateration result: x =", x, ", y =", y)
+        print(x,y)
 
+    except ValueError as e:
+        print("Error:", str(e))
