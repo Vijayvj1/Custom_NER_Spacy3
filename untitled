@@ -1,38 +1,34 @@
 import numpy as np
-from scipy.optimize import minimize
+from scipy.optimize import least_squares
 
-def distance(x, y, x0, y0):
-    return np.sqrt((x - x0)**2 + (y - y0)**2)
+def residuals(x, reference_points, distances):
+    return np.linalg.norm(reference_points - x, axis=1) - distances
 
-def objective_function(point, distances, reference_points):
-    errors = [distance(point[0], point[1], *ref_point) - dist for dist, ref_point in zip(distances, reference_points)]
-    return np.sum(np.square(errors))
-
-def trilateration_least_squares(distances, reference_points, max_distance_threshold=100.0):
-    print(distances)
-    # Check if any distance is greater than the threshold
-    if any(dist > max_distance_threshold for dist in distances):
-        raise ValueError("Distances exceed the maximum threshold. Trilateration not possible.")
-
-    # Initial guess for the unknown point (x, y)
-    initial_guess = np.mean(reference_points, axis=0)
-
-    result = minimize(objective_function, initial_guess, args=(distances, reference_points), method='BFGS')
-    return result.x
+def trilateration_3d(reference_points, distances):
+    if len(reference_points) != 3 or len(reference_points) != len(distances):
+        raise ValueError("Exactly three reference points with corresponding distances are required.")
+    
+    # Convert input data to numpy arrays for easier computations
+    reference_points = np.array(reference_points)
+    distances = np.array(distances)
+    
+    # Initial guess for the unknown object's position (can be any point in 3D space)
+    initial_guess = np.zeros(3)
+    
+    # Use least squares to solve for the unknown object's position
+    result = least_squares(residuals, initial_guess, args=(reference_points, distances))
+    object_position = result.x
+    
+    return object_position
 
 # Example usage:
 if __name__ == "__main__":
-    # Given distances and reference points
-    distances = [4.564383857652639, 2.2, 2.83]
-    reference_points = [(5.62,9.11), (8,9), (13,9)]
-    max_distance_threshold = 20
+    reference_points = np.array([
+        [0,0,1],   # [x1, y1, z1]
+        [10,0,0],  # [x2, y2, z2]
+        [6,3,0],   # [x3, y3, z3]
+    ])
+    distances = np.array([7,7,7])
 
-    try:
-        # Calculate the trilateration result
-        result = trilateration_least_squares(distances, reference_points, max_distance_threshold)
-        x, y = result
-        print("Trilateration result: x =", x, ", y =", y)
-        print(x,y)
-
-    except ValueError as e:
-        print("Error:", str(e))
+    object_position = trilateration_3d(reference_points, distances)
+    print("Estimated object position:", object_position)
