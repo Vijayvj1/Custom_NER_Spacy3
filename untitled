@@ -1,11 +1,11 @@
 import numpy as np
 from scipy.optimize import minimize
 
-def distance(x, y, x0, y0):
-    return np.sqrt((x - x0)**2 + (y - y0)**2)
+def distance(x, y, z, x0, y0, z0):
+    return np.sqrt((x - x0)**2 + (y - y0)**2 + (z - z0)**2)
 
 def objective_function(point, distances, reference_points):
-    errors = [distance(point[0], point[1], *ref_point) - dist for dist, ref_point in zip(distances, reference_points)]
+    errors = [distance(point[0], point[1], point[2], *ref_point) - dist for dist, ref_point in zip(distances, reference_points)]
     return np.sum(np.square(errors))
 
 def multilateration_least_squares(distances, reference_points, max_distance_threshold=100.0):
@@ -13,24 +13,24 @@ def multilateration_least_squares(distances, reference_points, max_distance_thre
     if any(dist > max_distance_threshold for dist in distances):
         raise ValueError("Distances exceed the maximum threshold. Multilateration not possible.")
 
-    # Initial guess for the unknown point (x, y)
-    initial_guess = np.mean(reference_points, axis=0)[:2]  # Take only the first two dimensions
+    # Initial guess for the unknown point (x, y, z)
+    initial_guess = np.mean(reference_points, axis=0)
 
     result = minimize(objective_function, initial_guess, args=(distances, reference_points), method='BFGS')
     return result.x
 
 # Example usage:
 if __name__ == "__main__":
-    # Given distances and reference points
-    distances = [1.3829316685939335,1.5824032355881983,2.33238075793812,0.9068627239003714,3.5113 ]
-    reference_points = [(2,6), (4.22,3.77), (5.76,7.45),(1.68,3.55),(7.19639,4.94501)]
+    # Given distances and reference points in 3D
+    distances = [3,3,3,3,2]
+    reference_points = [(1.75768,4.3556,2.51146), (5.69595,6.49432,2), (2.74,2.17,4.32),(7.15,5.05,4.19),(4.1,4.22,0.64)]
     max_distance_threshold = 20.0
 
     try:
-        # Calculate the multilateration result
+        # Calculate the 3D multilateration result
         result = multilateration_least_squares(distances, reference_points, max_distance_threshold)
-        x, y = result
-        print("Multilateration result: x =", x, ", y =", y)
+        x, y, z = result
+        print("Multilateration result: x =", x, ", y =", y, ", z =", z)
 
     except ValueError as e:
         print("Error:", str(e))
