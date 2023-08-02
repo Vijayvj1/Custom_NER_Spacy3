@@ -1,34 +1,36 @@
 import numpy as np
-from scipy.optimize import least_squares
+from scipy.optimize import minimize
 
-def residuals(x, reference_points, distances):
-    return np.linalg.norm(reference_points - x, axis=1) - distances
+def distance(x, y, x0, y0):
+    return np.sqrt((x - x0)**2 + (y - y0)**2)
 
-def trilateration_3d(reference_points, distances):
-    if len(reference_points) != 3 or len(reference_points) != len(distances):
-        raise ValueError("Exactly three reference points with corresponding distances are required.")
-    
-    # Convert input data to numpy arrays for easier computations
-    reference_points = np.array(reference_points)
-    distances = np.array(distances)
-    
-    # Initial guess for the unknown object's position (can be any point in 3D space)
-    initial_guess = np.zeros(3)
-    
-    # Use least squares to solve for the unknown object's position
-    result = least_squares(residuals, initial_guess, args=(reference_points, distances))
-    object_position = result.x
-    
-    return object_position
+def objective_function(point, distances, reference_points):
+    errors = [distance(point[0], point[1], *ref_point) - dist for dist, ref_point in zip(distances, reference_points)]
+    return np.sum(np.square(errors))
+
+def multilateration_least_squares(distances, reference_points, max_distance_threshold=100.0):
+    # Check if any distance is greater than the threshold
+    if any(dist > max_distance_threshold for dist in distances):
+        raise ValueError("Distances exceed the maximum threshold. Multilateration not possible.")
+
+    # Initial guess for the unknown point (x, y)
+    initial_guess = np.mean(reference_points, axis=0)[:2]  # Take only the first two dimensions
+
+    result = minimize(objective_function, initial_guess, args=(distances, reference_points), method='BFGS')
+    return result.x
 
 # Example usage:
 if __name__ == "__main__":
-    reference_points = np.array([
-        [0,0,1],   # [x1, y1, z1]
-        [10,0,0],  # [x2, y2, z2]
-        [6,3,0],   # [x3, y3, z3]
-    ])
-    distances = np.array([7,7,7])
+    # Given distances and reference points
+    distances = [1.3829316685939335,1.5824032355881983,2.33238075793812,0.9068627239003714,3.5113 ]
+    reference_points = [(2,6), (4.22,3.77), (5.76,7.45),(1.68,3.55),(7.19639,4.94501)]
+    max_distance_threshold = 20.0
 
-    object_position = trilateration_3d(reference_points, distances)
-    print("Estimated object position:", object_position)
+    try:
+        # Calculate the multilateration result
+        result = multilateration_least_squares(distances, reference_points, max_distance_threshold)
+        x, y = result
+        print("Multilateration result: x =", x, ", y =", y)
+
+    except ValueError as e:
+        print("Error:", str(e))
