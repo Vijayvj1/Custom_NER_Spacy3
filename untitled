@@ -1,53 +1,59 @@
-import numpy as np
-from scipy.optimize import least_squares
+Algorithm 1: Range Calibration Model
 
+Input: 
+  - parameters = [c1, c2, c3, c4] (Model parameters)
+  - rtt (Round-Trip Time measurement)
 
-rtt_data = np.array([57,60,70,80,85,90])
-original_distance_data = np.array([0,5,10,20,30,40])
+Procedure RangeCalibrationModel(parameters, rtt):
+  drtt ← rtt  # Assume RTT is the same as drtt for simplicity
+  e ← c1 * drtt^3 + c2 * drtt^2 + c3 * drtt + c4
+  calibrated_distance ← drtt + e
+  Return calibrated_distance
 
+End Algorithm 1
 
-def range_calibration_model(parameters, rtt):
-    c1, c2, c3, c4 = parameters
-    drtt = rtt  # Assume RTT is the same as drtt for simplicity
-    e = c1 * drtt**3 + c2 * drtt**2 + c3 * drtt + c4
-    calibrated_distance = drtt + e
-    return calibrated_distance
+Algorithm 2: Nonlinear Least-Squares Fitting
 
+Input: 
+  - parameters (Initial guess for model parameters)
+  - rtt_data (Array of RTT measurements)
+  - original_distance_data (Array of corresponding original distances)
 
-def residual_function(parameters, rtt, original_distance):
-    return range_calibration_model(parameters, rtt) - original_distance
+Procedure NonlinearLeastSquaresFitting(parameters, rtt_data, original_distance_data):
+  Minimize the sum of squares of residuals:
+  result ← LeastSquares(residual_function, parameters, args=(rtt_data, original_distance_data))
+  calibrated_parameters ← result.x
+  Return calibrated_parameters
 
-initial_parameters = [0.1, 0.1, 0.1, 0.1]
+End Algorithm 2
 
+Algorithm 3: Residual Function
 
-result = least_squares(residual_function, initial_parameters, args=(rtt_data, original_distance_data))
+Input: 
+  - parameters (Model parameters)
+  - rtt (RTT measurement)
+  - original_distance (Corresponding original distance)
 
+Procedure ResidualFunction(parameters, rtt, original_distance):
+  calibrated_distance ← RangeCalibrationModel(parameters, rtt)
+  residual ← calibrated_distance - original_distance
+  Return residual
 
-calibrated_parameters = result.x
+End Algorithm 3
 
-print("Calibrated Parameters:", calibrated_parameters)
+Algorithm 4: Live Calibration
 
+Input: 
+  - calibrated_parameters (Calibrated model parameters)
+  - rtt_input (Input RTT value)
 
-import numpy as np
+Procedure LiveCalibration(calibrated_parameters, rtt_input):
+  calibrated_distance ← RangeCalibrationModel(calibrated_parameters, rtt_input)
+  Return calibrated_distance
 
+End Algorithm 4
 
-calibrated_parameters = calibrated_parameters
-
-
-def range_calibration_model(parameters, rtt):
-    c1, c2, c3, c4 = parameters
-    drtt = rtt  # Assume RTT is the same as drtt for simplicity
-    e = c1 * drtt**3 + c2 * drtt**2 + c3 * drtt + c4
-    calibrated_distance = drtt + e
-    return calibrated_distance
-
-
-def live_calibration(rtt_input):
-    calibrated_distance = range_calibration_model(calibrated_parameters, rtt_input)
-    return calibrated_distance
-
-
-input_rtt = 57 
-calibrated_distance = live_calibration(input_rtt)
-print(f"Calibrated Distance for RTT {input_rtt}: {calibrated_distance}")
-
+# Example usage:
+input_rtt ← 0.2  # Replace with the RTT value to be calibrated
+calibrated_distance ← LiveCalibration(calibrated_parameters, input_rtt)
+Print "Calibrated Distance for RTT", input_rtt, ":", calibrated_distance
