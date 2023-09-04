@@ -1,37 +1,15 @@
-ap_name	Actual Meter	Estimated_Distance
-ESP32C3_DFR1	8	87.3
-ESP32C3_DFR1	8	61.2
-ESP32C3_DFR1	8	59.85
-ESP32C3_DFR1	8	61.65
-ESP32C3_DFR1	8	62.4
-ESP32C3_DFR2	8	56.7
-ESP32C3_DFR2	8	56.85
-ESP32C3_DFR2	8	56.1
-ESP32C3_DFR2	8	56.85
-ESP32C3_DFR2	8	56.85
-ESP32C3_PNS1	8	54.9
-ESP32C3_PNS1	8	55.8
-ESP32C3_PNS1	8	55.5
-ESP32C3_PNS1	8	55.05
-ESP32C3_PNS1	8	55.2
-ESP32C3_PNS2	8	51.75
-ESP32C3_PNS2	8	51.6
-ESP32C3_PNS2	8	51
-ESP32C3_PNS2	8	51.3
-ESP32C3_PNS2	8	51.3
-ESP32C3_DFR1	8	62.1
-ESP32C3_DFR1	8	61.8
-ESP32C3_DFR1	8	61.65
-ESP32C3_DFR1	8	62.25
-ESP32C3_DFR1	8	61.95
-ESP32C3_DFR2	8	57.45
-ESP32C3_DFR2	8	56.7
-ESP32C3_DFR2	8	54.6
-ESP32C3_DFR2	8	54.75
-ESP32C3_DFR2	8	54.45
-ESP32C3_PNS1	8	54.9
-ESP32C3_PNS1	8	55.2
-ESP32C3_PNS1	8	55.05
-ESP32C3_PNS1	8	54.75
-ESP32C3_PNS1	8	54.6
-ESP32C3_PNS2	8	51.3
+def check_values_greater_than(dictionary, value):
+    keys_not_greater = []
+    for key, val in dictionary.items():
+        if val <= value:
+            keys_not_greater.append(key)
+    return keys_not_greater
+my_dict = {'A': 10, 'B': 20, 'C': 5, 'D': 25}
+value_to_compare = 15
+
+keys_not_greater = check_values_greater_than(my_dict, value_to_compare)
+
+if not keys_not_greater:
+    print("All values are greater than", value_to_compare)
+else:
+    print("Keys with values not greater than", value_to_compare, "are:", keys_not_greater)
