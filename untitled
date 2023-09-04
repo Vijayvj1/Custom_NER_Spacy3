@@ -1,37 +1,53 @@
-from datetime import datetime, timedelta
+import numpy as np
+from scipy.optimize import least_squares
 
-# Define the dictionary
-data = {
-    'MAC_1_TX': '2023-09-04 10:28:51',
-    'MAC_2_TX': '2023-09-04 10:28:57',
-    'MAC_3_TX': '2023-09-04 10:29:04',
-    'MAC_4_TX': '2023-09-04 10:29:09'
-}
 
-# Get the current time
-current_time = datetime.now()
+rtt_data = np.array([57,60,70,80,85,90])
+original_distance_data = np.array([0,5,10,20,30,40])
 
-# Define the threshold (2 minutes)
-threshold = timedelta(minutes=2)
 
-# Initialize a list to store keys with values greater than the threshold
-keys_greater_than_threshold = []
+def range_calibration_model(parameters, rtt):
+    c1, c2, c3, c4 = parameters
+    drtt = rtt  # Assume RTT is the same as drtt for simplicity
+    e = c1 * drtt**3 + c2 * drtt**2 + c3 * drtt + c4
+    calibrated_distance = drtt + e
+    return calibrated_distance
 
-# Iterate through the dictionary
-for key, value in data.items():
-    # Convert the string value to a datetime object
-    value_time = datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
-    
-    # Calculate the time difference
-    time_difference = current_time - value_time
-    
-    # Check if the time difference is greater than the threshold
-    if time_difference > threshold:
-        keys_greater_than_threshold.append(key)
 
-# Check if any keys are greater than the threshold
-if keys_greater_than_threshold:
-    print("Keys with values greater than 2 minutes from the current time:", keys_greater_than_threshold)
-else:
-    print("No keys with values greater than 2 minutes from the current time.")
+def residual_function(parameters, rtt, original_distance):
+    return range_calibration_model(parameters, rtt) - original_distance
+
+initial_parameters = [0.1, 0.1, 0.1, 0.1]
+
+
+result = least_squares(residual_function, initial_parameters, args=(rtt_data, original_distance_data))
+
+
+calibrated_parameters = result.x
+
+print("Calibrated Parameters:", calibrated_parameters)
+
+
+import numpy as np
+
+
+calibrated_parameters = calibrated_parameters
+
+
+def range_calibration_model(parameters, rtt):
+    c1, c2, c3, c4 = parameters
+    drtt = rtt  # Assume RTT is the same as drtt for simplicity
+    e = c1 * drtt**3 + c2 * drtt**2 + c3 * drtt + c4
+    calibrated_distance = drtt + e
+    return calibrated_distance
+
+
+def live_calibration(rtt_input):
+    calibrated_distance = range_calibration_model(calibrated_parameters, rtt_input)
+    return calibrated_distance
+
+
+input_rtt = 57 
+calibrated_distance = live_calibration(input_rtt)
+print(f"Calibrated Distance for RTT {input_rtt}: {calibrated_distance}")
 
