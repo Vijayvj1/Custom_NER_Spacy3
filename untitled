@@ -1,4 +1,37 @@
-{'MAC_1_TX': '2023-09-04 10:28:51',
- 'MAC_2_TX': '2023-09-04 10:28:57',
- 'MAC_3_TX': '2023-09-04 10:29:04',
- 'MAC_4_TX': '2023-09-04 10:29:09'}
+from datetime import datetime, timedelta
+
+# Define the dictionary
+data = {
+    'MAC_1_TX': '2023-09-04 10:28:51',
+    'MAC_2_TX': '2023-09-04 10:28:57',
+    'MAC_3_TX': '2023-09-04 10:29:04',
+    'MAC_4_TX': '2023-09-04 10:29:09'
+}
+
+# Get the current time
+current_time = datetime.now()
+
+# Define the threshold (2 minutes)
+threshold = timedelta(minutes=2)
+
+# Initialize a list to store keys with values greater than the threshold
+keys_greater_than_threshold = []
+
+# Iterate through the dictionary
+for key, value in data.items():
+    # Convert the string value to a datetime object
+    value_time = datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
+    
+    # Calculate the time difference
+    time_difference = current_time - value_time
+    
+    # Check if the time difference is greater than the threshold
+    if time_difference > threshold:
+        keys_greater_than_threshold.append(key)
+
+# Check if any keys are greater than the threshold
+if keys_greater_than_threshold:
+    print("Keys with values greater than 2 minutes from the current time:", keys_greater_than_threshold)
+else:
+    print("No keys with values greater than 2 minutes from the current time.")
+
