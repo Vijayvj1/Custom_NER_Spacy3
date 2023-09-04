@@ -1,15 +1,4 @@
-def check_values_greater_than(dictionary, value):
-    keys_not_greater = []
-    for key, val in dictionary.items():
-        if val <= value:
-            keys_not_greater.append(key)
-    return keys_not_greater
-my_dict = {'A': 10, 'B': 20, 'C': 5, 'D': 25}
-value_to_compare = 15
-
-keys_not_greater = check_values_greater_than(my_dict, value_to_compare)
-
-if not keys_not_greater:
-    print("All values are greater than", value_to_compare)
-else:
-    print("Keys with values not greater than", value_to_compare, "are:", keys_not_greater)
+{'MAC_1_TX': '2023-09-04 10:28:51',
+ 'MAC_2_TX': '2023-09-04 10:28:57',
+ 'MAC_3_TX': '2023-09-04 10:29:04',
+ 'MAC_4_TX': '2023-09-04 10:29:09'}
