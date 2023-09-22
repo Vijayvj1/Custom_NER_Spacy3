@@ -4,13 +4,13 @@ import concurrent.futures
 # Define a list of URLs you want to hit
 urls = ["https://example.com", "https://google.com", "https://github.com"]
 
-# Function to make a GET request to a URL and return the response status code
+# Function to make a GET request to a URL and return the response
 def fetch_url(url):
     try:
         response = requests.get(url)
-        return url, response.status_code
+        return url, response.status_code, response.text
     except Exception as e:
-        return url, str(e)
+        return url, str(e), None
 
 # Use concurrent.futures.ThreadPoolExecutor to send requests in parallel
 with concurrent.futures.ThreadPoolExecutor() as executor:
@@ -21,7 +21,9 @@ with concurrent.futures.ThreadPoolExecutor() as executor:
     for future in concurrent.futures.as_completed(future_to_url):
         url = future_to_url[future]
         try:
-            status_code = future.result()
+            url, status_code, response_text = future.result()
             print(f"{url} returned status code: {status_code}")
+            if response_text is not None:
+                print(f"Response content: {response_text[:100]}...")  # Print the first 100 characters of the response content
         except Exception as e:
             print(f"Error fetching {url}: {e}")
