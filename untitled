@@ -1,59 +1,27 @@
-Algorithm 1: Range Calibration Model
+import requests
+import concurrent.futures
 
-Input: 
-  - parameters = [c1, c2, c3, c4] (Model parameters)
-  - rtt (Round-Trip Time measurement)
+# Define a list of URLs you want to hit
+urls = ["https://example.com", "https://google.com", "https://github.com"]
 
-Procedure RangeCalibrationModel(parameters, rtt):
-  drtt ← rtt  # Assume RTT is the same as drtt for simplicity
-  e ← c1 * drtt^3 + c2 * drtt^2 + c3 * drtt + c4
-  calibrated_distance ← drtt + e
-  Return calibrated_distance
+# Function to make a GET request to a URL and return the response status code
+def fetch_url(url):
+    try:
+        response = requests.get(url)
+        return url, response.status_code
+    except Exception as e:
+        return url, str(e)
 
-End Algorithm 1
+# Use concurrent.futures.ThreadPoolExecutor to send requests in parallel
+with concurrent.futures.ThreadPoolExecutor() as executor:
+    # Submit tasks to the executor
+    future_to_url = {executor.submit(fetch_url, url): url for url in urls}
 
-Algorithm 2: Nonlinear Least-Squares Fitting
-
-Input: 
-  - parameters (Initial guess for model parameters)
-  - rtt_data (Array of RTT measurements)
-  - original_distance_data (Array of corresponding original distances)
-
-Procedure NonlinearLeastSquaresFitting(parameters, rtt_data, original_distance_data):
-  Minimize the sum of squares of residuals:
-  result ← LeastSquares(residual_function, parameters, args=(rtt_data, original_distance_data))
-  calibrated_parameters ← result.x
-  Return calibrated_parameters
-
-End Algorithm 2
-
-Algorithm 3: Residual Function
-
-Input: 
-  - parameters (Model parameters)
-  - rtt (RTT measurement)
-  - original_distance (Corresponding original distance)
-
-Procedure ResidualFunction(parameters, rtt, original_distance):
-  calibrated_distance ← RangeCalibrationModel(parameters, rtt)
-  residual ← calibrated_distance - original_distance
-  Return residual
-
-End Algorithm 3
-
-Algorithm 4: Live Calibration
-
-Input: 
-  - calibrated_parameters (Calibrated model parameters)
-  - rtt_input (Input RTT value)
-
-Procedure LiveCalibration(calibrated_parameters, rtt_input):
-  calibrated_distance ← RangeCalibrationModel(calibrated_parameters, rtt_input)
-  Return calibrated_distance
-
-End Algorithm 4
-
-# Example usage:
-input_rtt ← 0.2  # Replace with the RTT value to be calibrated
-calibrated_distance ← LiveCalibration(calibrated_parameters, input_rtt)
-Print "Calibrated Distance for RTT", input_rtt, ":", calibrated_distance
+    # Iterate through the completed futures
+    for future in concurrent.futures.as_completed(future_to_url):
+        url = future_to_url[future]
+        try:
+            status_code = future.result()
+            print(f"{url} returned status code: {status_code}")
+        except Exception as e:
+            print(f"Error fetching {url}: {e}")
