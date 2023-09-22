@@ -1,1 +1,22 @@
 
+import pandas as pd
+
+# Sample DataFrame
+data = {'x': [1.0, 2.0, 3.0, 4.0, 5.0],
+        'y': [10.0, 20.0, 30.0, 40.0, 50.0]}
+
+df = pd.DataFrame(data)
+
+# Target values
+x_target = 3.5
+y_target = 38.0
+
+# Calculate Euclidean distance for each row
+df['distance'] = ((df['x'] - x_target)**2 + (df['y'] - y_target)**2)**0.5
+
+# Find the row with the smallest distance
+closest_row = df.loc[df['distance'].idxmin()]
+
+# Display the closest row
+print("Closest Row:")
+print(closest_row)
