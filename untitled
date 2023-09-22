@@ -1,29 +1,75 @@
-import requests
-import concurrent.futures
+@ns.route('/prediction')
+@api.response(404, 'Post not found.')
+class GetEspPredictionItem(Resource):
 
-# Define a list of URLs you want to hit
-urls = ["https://example.com", "https://google.com", "https://github.com"]
+    # @api.marshal_with(tag_get)
+    @api.response(400, 'Wrong Payload')
+    @api.response(500, 'Internal Server Error')
+    def get(self):
+        """
+          Get a tag information.
+          URI: /api/tag/informations/?tag_id=200
+        """
 
-# Function to make a GET request to a URL and return the response
-def fetch_url(url):
-    try:
-        response = requests.get(url)
-        return url, response.status_code, response.text
-    except Exception as e:
-        return url, str(e), None
-
-# Use concurrent.futures.ThreadPoolExecutor to send requests in parallel
-with concurrent.futures.ThreadPoolExecutor() as executor:
-    # Submit tasks to the executor
-    future_to_url = {executor.submit(fetch_url, url): url for url in urls}
-
-    # Iterate through the completed futures
-    for future in concurrent.futures.as_completed(future_to_url):
-        url = future_to_url[future]
         try:
-            url, status_code, response_text = future.result()
-            print(f"{url} returned status code: {status_code}")
-            if response_text is not None:
-                print(f"Response content: {response_text[:100]}...")  # Print the first 100 characters of the response content
+            sem_pred = threading.Semaphore()
+
+            sem_pred.acquire()
+            mac_id = request.args.get('mac_id')
+
+            if isValidMACAddress(str(mac_id)):
+
+                prediction_result_df, transformed_raw_data, valid_data_id_lis, algo_used, error = esp_prediction_pipeline(
+                    mac=str(mac_id))
+
+                if error is None:
+
+                    pred_id = add_esp_pred_data(prediction_result_df)
+
+                    count_prediction = get_count_mac_esp_information_esp(mac_id)
+
+                    if count_prediction > 0:
+
+                        result = get_mac_pred_information_esp(mac_id)
+                        result = result.sort_values(by='request_end_time', ascending=False)
+
+                        result_json = result.to_json(orient='records', indent=4)
+                        data = json.loads(result_json)
+                        # result_json = ast.literal_eval(result_json)
+                        data[0]["ViewPort"] = esp_layout_grid
+
+                        pred_map_df = pd.DataFrame()
+
+                        pred_map_df["pred_id"] = [pred_id]
+                        # pred_map_df["id"] = [pred_id]
+                        pred_map_df["result_json"] = transformed_raw_data.to_json(orient='records')
+                        pred_map_df["data_raw_id"] = str(valid_data_id_lis)
+                        pred_map_df["algo_used"] = str(algo_used)
+
+                        add_prediction_mapping(pred_map_df)
+
+                        sem_pred.release()
+                        return data, 200
+
+
+                    else:
+                        sem_pred.release()
+                        return {"code": 1, "message": str("No Predictions Found for the Given MAC!")}
+
+
+                else:
+                    sem_pred.release()
+                    return {"code": 1, "message": str("An Error Occurred in Calculation") + str(error)}, 400
+
+            else:
+                sem_pred.release()
+
+                return {"code": 1, "message": str("Invalid MAC Format")}, 400
+
         except Exception as e:
-            print(f"Error fetching {url}: {e}")
+
+            sem_pred.release()
+            print(traceback.format_exc())
+            print(sys.exc_info()[2])
+
+            return {"code": 1, "message": str("An Error Occurred in Calculation") + str(e)}, 400
