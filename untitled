@@ -1,22 +1,74 @@
+Integrating JWT (JSON Web Tokens) into a Python Flask API is a common way to implement authentication and authorization for your API. JWTs are used to securely transmit information between the client and server. Here's a step-by-step guide on how to integrate JWT in a Flask API:
 
-import pandas as pd
+1. Install the required packages:
 
-# Sample DataFrame
-data = {'x': [1.0, 2.0, 3.0, 4.0, 5.0],
-        'y': [10.0, 20.0, 30.0, 40.0, 50.0]}
+   You need to install the Flask library and a JWT library for Flask, such as PyJWT. You can install them using pip:
 
-df = pd.DataFrame(data)
+   ```
+   pip install Flask
+   pip install PyJWT
+   ```
 
-# Target values
-x_target = 3.5
-y_target = 38.0
+2. Set up your Flask application:
 
-# Calculate Euclidean distance for each row
-df['distance'] = ((df['x'] - x_target)**2 + (df['y'] - y_target)**2)**0.5
+   Create a Flask application and define your routes and endpoints. Here's a minimal example to get you started:
 
-# Find the row with the smallest distance
-closest_row = df.loc[df['distance'].idxmin()]
+   ```python
+   from flask import Flask, request, jsonify
+   import jwt
+   from functools import wraps
 
-# Display the closest row
-print("Closest Row:")
-print(closest_row)
+   app = Flask(__name)
+   app.config['SECRET_KEY'] = 'your-secret-key'  # Replace with your secret key
+
+   def token_required(f):
+       @wraps(f)
+       def decorated(*args, **kwargs):
+           token = request.headers.get('Authorization')
+
+           if not token:
+               return jsonify({'message': 'Token is missing'}), 403
+
+           try:
+               data = jwt.decode(token, app.config['SECRET_KEY'])
+           except:
+               return jsonify({'message': 'Token is invalid'}), 403
+
+           return f(*args, **kwargs)
+
+       return decorated
+
+   @app.route('/login', methods=['POST'])
+   def login():
+       # In a real-world scenario, you would validate the user's credentials here.
+       # If valid, create a JWT token and return it to the client.
+
+       token = jwt.encode({'user': 'example_user'}, app.config['SECRET_KEY'], algorithm='HS256')
+
+       return jsonify({'token': token})
+
+   @app.route('/protected', methods=['GET'])
+   @token_required
+   def protected():
+       return jsonify({'message': 'This is a protected route'})
+
+   if __name__ == '__main__':
+       app.run(debug=True)
+   ```
+
+   In this example, we have a `/login` route to generate a JWT token, and a `/protected` route that is protected by the `token_required` decorator.
+
+3. Generate and use JWT tokens:
+
+   - Make a POST request to `/login` with valid user credentials to receive a JWT token.
+   - Use the received token in the `Authorization` header for accessing protected routes like `/protected`.
+
+   For example, you can make a request to the `/protected` endpoint with the token in the `Authorization` header:
+
+   ```
+   GET /protected
+   Headers:
+   Authorization: Bearer YOUR_TOKEN_HERE
+   ```
+
+This is a simple example to get you started with JWT integration in Flask. In a real-world application, you should implement user authentication and authorization logic and store user information securely. Additionally, consider using more advanced features like token expiration and refresh tokens for better security.
