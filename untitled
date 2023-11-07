@@ -1,74 +1,57 @@
-Integrating JWT (JSON Web Tokens) into a Python Flask API is a common way to implement authentication and authorization for your API. JWTs are used to securely transmit information between the client and server. Here's a step-by-step guide on how to integrate JWT in a Flask API:
+from flask import Flask, request, jsonify
+import jwt
+import datetime
 
-1. Install the required packages:
+app = Flask(__name__)
 
-   You need to install the Flask library and a JWT library for Flask, such as PyJWT. You can install them using pip:
+# Replace 'your_secret_key' with a strong secret key
+app.config['SECRET_KEY'] = 'your_secret_key'
 
-   ```
-   pip install Flask
-   pip install PyJWT
-   ```
 
-2. Set up your Flask application:
 
-   Create a Flask application and define your routes and endpoints. Here's a minimal example to get you started:
+# Route for user registration
+@app.route('/register', methods=['POST'])
+def register():
+    # Implement user registration logic here
+    # Typically, this would involve storing user information in a database
+    # Return a success message upon successful registration
+    return jsonify({'message': 'User registered successfully'})
 
-   ```python
-   from flask import Flask, request, jsonify
-   import jwt
-   from functools import wraps
+# Route for user login
+@app.route('/login', methods=['POST'])
+def login():
+    # Implement user login logic here
+    # Check credentials, generate and return a JWT upon successful login
+    # Example code:
+    username = request.json.get('username')
+    password = request.json.get('password')
 
-   app = Flask(__name)
-   app.config['SECRET_KEY'] = 'your-secret-key'  # Replace with your secret key
+    # Check if the username and password are valid
+    if username == 'example_user' and password == 'password':
+        payload = {
+            'username': username,
+            'exp': datetime.datetime.utcnow() + datetime.timedelta(days=1)
+        }
+        token = jwt.encode(payload, app.config['SECRET_KEY'], algorithm='HS256')
+        return jsonify({'token': token})
+    else:
+        return jsonify({'message': 'Invalid credentials'}, 401)
 
-   def token_required(f):
-       @wraps(f)
-       def decorated(*args, **kwargs):
-           token = request.headers.get('Authorization')
+# Protected route (requires authentication)
+@app.route('/protected', methods=['GET'])
+def protected():
+    token = request.headers.get('Authorization')
 
-           if not token:
-               return jsonify({'message': 'Token is missing'}), 403
+    if not token:
+        return jsonify({'message': 'Token is missing'}, 401)
 
-           try:
-               data = jwt.decode(token, app.config['SECRET_KEY'])
-           except:
-               return jsonify({'message': 'Token is invalid'}), 403
+    try:
+        payload = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
+        return jsonify({'message': f'Welcome, {payload["username"]}! This is a protected resource.'})
+    except jwt.ExpiredSignatureError:
+        return jsonify({'message': 'Token has expired'}, 401)
+    except jwt.DecodeError:
+        return jsonify({'message': 'Invalid token'}, 401)
 
-           return f(*args, **kwargs)
-
-       return decorated
-
-   @app.route('/login', methods=['POST'])
-   def login():
-       # In a real-world scenario, you would validate the user's credentials here.
-       # If valid, create a JWT token and return it to the client.
-
-       token = jwt.encode({'user': 'example_user'}, app.config['SECRET_KEY'], algorithm='HS256')
-
-       return jsonify({'token': token})
-
-   @app.route('/protected', methods=['GET'])
-   @token_required
-   def protected():
-       return jsonify({'message': 'This is a protected route'})
-
-   if __name__ == '__main__':
-       app.run(debug=True)
-   ```
-
-   In this example, we have a `/login` route to generate a JWT token, and a `/protected` route that is protected by the `token_required` decorator.
-
-3. Generate and use JWT tokens:
-
-   - Make a POST request to `/login` with valid user credentials to receive a JWT token.
-   - Use the received token in the `Authorization` header for accessing protected routes like `/protected`.
-
-   For example, you can make a request to the `/protected` endpoint with the token in the `Authorization` header:
-
-   ```
-   GET /protected
-   Headers:
-   Authorization: Bearer YOUR_TOKEN_HERE
-   ```
-
-This is a simple example to get you started with JWT integration in Flask. In a real-world application, you should implement user authentication and authorization logic and store user information securely. Additionally, consider using more advanced features like token expiration and refresh tokens for better security.
+if __name__ == '__main__':
+    app.run(debug=True)
