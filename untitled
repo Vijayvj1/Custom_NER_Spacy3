@@ -1,57 +1,45 @@
-from flask import Flask, request, jsonify
-import jwt
-import datetime
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import padding
+import os
+from base64 import urlsafe_b64encode
 
-app = Flask(__name__)
+def encrypt(plaintext, key):
+    # Pad the plaintext using PKCS7
+    padder = padding.PKCS7(128).padder()
+    padded_data = padder.update(plaintext) + padder.finalize()
 
-# Replace 'your_secret_key' with a strong secret key
-app.config['SECRET_KEY'] = 'your_secret_key'
+    # Create an AES cipher object in CBC mode
+    cipher = Cipher(algorithms.AES(key), modes.CFB(b'\0'*16), backend=default_backend())
 
+    # Encrypt the data
+    encryptor = cipher.encryptor()
+    ciphertext = encryptor.update(padded_data) + encryptor.finalize()
 
+    # Return the ciphertext
+    return ciphertext
 
-# Route for user registration
-@app.route('/register', methods=['POST'])
-def register():
-    # Implement user registration logic here
-    # Typically, this would involve storing user information in a database
-    # Return a success message upon successful registration
-    return jsonify({'message': 'User registered successfully'})
+def decrypt(ciphertext, key):
+    # Create an AES cipher object in CBC mode
+    cipher = Cipher(algorithms.AES(key), modes.CFB(b'\0'*16), backend=default_backend())
 
-# Route for user login
-@app.route('/login', methods=['POST'])
-def login():
-    # Implement user login logic here
-    # Check credentials, generate and return a JWT upon successful login
-    # Example code:
-    username = request.json.get('username')
-    password = request.json.get('password')
+    # Decrypt the data
+    decryptor = cipher.decryptor()
+    decrypted_data = decryptor.update(ciphertext) + decryptor.finalize()
 
-    # Check if the username and password are valid
-    if username == 'example_user' and password == 'password':
-        payload = {
-            'username': username,
-            'exp': datetime.datetime.utcnow() + datetime.timedelta(days=1)
-        }
-        token = jwt.encode(payload, app.config['SECRET_KEY'], algorithm='HS256')
-        return jsonify({'token': token})
-    else:
-        return jsonify({'message': 'Invalid credentials'}, 401)
+    # Unpad the decrypted data using PKCS7
+    unpadder = padding.PKCS7(128).unpadder()
+    unpadded_data = unpadder.update(decrypted_data) + unpadder.finalize()
 
-# Protected route (requires authentication)
-@app.route('/protected', methods=['GET'])
-def protected():
-    token = request.headers.get('Authorization')
+    return unpadded_data
 
-    if not token:
-        return jsonify({'message': 'Token is missing'}, 401)
+# Example usage
+key = b'ThisIsASecretKey'
+plaintext = b'Hello, AES encryption and decryption without IV!'
+ciphertext = encrypt(plaintext, key)
 
-    try:
-        payload = jwt.decode(token, app.config['SECRET_KEY'], algorithms=['HS256'])
-        return jsonify({'message': f'Welcome, {payload["username"]}! This is a protected resource.'})
-    except jwt.ExpiredSignatureError:
-        return jsonify({'message': 'Token has expired'}, 401)
-    except jwt.DecodeError:
-        return jsonify({'message': 'Invalid token'}, 401)
+# Print the ciphertext and decrypted plaintext
+print("Ciphertext:", urlsafe_b64encode(ciphertext).decode())
 
-if __name__ == '__main__':
-    app.run(debug=True)
+decrypted_text = decrypt(ciphertext, key)
+print("Decrypted:", decrypted_text.decode())
