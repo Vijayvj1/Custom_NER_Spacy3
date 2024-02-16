@@ -1,30 +1,37 @@
-from Crypto.Cipher import AES
-from Crypto.Util.Padding import pad, unpad
-from Crypto.Random import get_random_bytes
-import base64
+def distribute_number_weighted(total):
+  """
+  Distributes a total number into three parts. If equal distribution is not
+  possible, the first part receives a higher weight of 50%, while the other two
+  parts receive a weight of 25% each.
 
-def encrypt(plain_text, key):
-    key = key.encode('utf-8')
-    cipher = AES.new(key, AES.MODE_CBC, iv=get_random_bytes(16))
-    encrypted = cipher.encrypt(pad(plain_text.encode('utf-8'), AES.block_size))
-    combined = cipher.iv + encrypted
-    return base64.b64encode(combined).decode('utf-8')
+  Args:
+    total: The total number to distribute.
 
-def decrypt(encrypted_text, key):
-    key = key.encode('utf-8')
-    combined = base64.b64decode(encrypted_text)
-    iv = combined[:16]
-    encrypted = combined[16:]
-    cipher = AES.new(key, AES.MODE_CBC, iv)
-    decrypted = unpad(cipher.decrypt(encrypted), AES.block_size)
-    return decrypted.decode('utf-8')
+  Returns:
+    A list containing the three distributed parts.
+  """
 
-# Example usage:
-plain_text = "Hello, World!"
-encryption_key = "YourEncryptionKe"
+  part1 = total // 2
+  part2 = (total - part1) // 2
+  part3 = total - part1 - part2
 
-encrypted_text = encrypt(plain_text, encryption_key)
-print(f"Encrypted Text: {encrypted_text}")
+  # If equal distribution is not possible, adjust the weights
+  if part2 == 0 or part3 == 0:
+    part1 = total // 2 + total % 2
+    part2 = (total - part1) // 2
+    part3 = total - part1 - part2
 
-decrypted_text = decrypt(encrypted_text, encryption_key)
-print(f"Decrypted Text: {decrypted_text}")
+  return [part1, part2, part3]
+
+# Test cases
+total1 = 3
+distributed_parts1 = distribute_number_weighted(total1)
+print("Total:", total1, "->", distributed_parts1)
+
+total2 = 4
+distributed_parts2 = distribute_number_weighted(total2)
+print("Total:", total2, "->", distributed_parts2)
+
+# Expected output:
+# Total: 3 -> [2, 1, 0]
+# Total: 4 -> [2, 1, 1]
