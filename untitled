@@ -1,37 +1,39 @@
-def distribute_number_weighted(total):
-  """
-  Distributes a total number into three parts. If equal distribution is not
-  possible, the first part receives a higher weight of 50%, while the other two
-  parts receive a weight of 25% each.
+import pandas as pd
+import matplotlib.pyplot as plt
 
-  Args:
-    total: The total number to distribute.
+# Sample DataFrame describing attributes for target 0 and target 1
+data = {
+    'attribute1': [1, 2, 3, 4, 5, 6, 7, 8],
+    'attribute2': [9, 10, 11, 12, 13, 14, 15, 16],
+    'attribute3': [17, 18, 19, 20, 21, 22, 23, 24],
+    'attribute4': [25, 26, 27, 28, 29, 30, 31, 32],
+    'target': [0, 1, 1, 0, 1, 0, 1, 0]
+}
+df = pd.DataFrame(data)
 
-  Returns:
-    A list containing the three distributed parts.
-  """
+# Group by the target variable
+grouped = df.groupby('target')
 
-  part1 = total // 2
-  part2 = (total - part1) // 2
-  part3 = total - part1 - part2
+valid_columns = ['attribute1', 'attribute2', 'attribute3','attribute4' ]
 
-  # If equal distribution is not possible, adjust the weights
-  if part2 == 0 or part3 == 0:
-    part1 = total // 2 + total % 2
-    part2 = (total - part1) // 2
-    part3 = total - part1 - part2
+for i in valid_columns :
+  # Get the descriptive statistics for attribute1 for each target group
+  describe_stats_attribute1 = grouped[i].describe()
 
-  return [part1, part2, part3]
+  # Plotting
+  fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(12, 4))
 
-# Test cases
-total1 = 3
-distributed_parts1 = distribute_number_weighted(total1)
-print("Total:", total1, "->", distributed_parts1)
+  # Plot descriptive statistics for target 0
+  attribute1_stats_target0 = describe_stats_attribute1.loc[0]
+  attribute1_stats_target0.plot(kind='bar', ax=axes[0], color='blue', alpha=0.7)
+  axes[0].set_title(f'Target 0 - {i}')
+  axes[0].set_ylabel('Value')
 
-total2 = 4
-distributed_parts2 = distribute_number_weighted(total2)
-print("Total:", total2, "->", distributed_parts2)
+  # Plot descriptive statistics for target 1
+  attribute1_stats_target1 = describe_stats_attribute1.loc[1]
+  attribute1_stats_target1.plot(kind='bar', ax=axes[1], color='orange', alpha=0.7)
+  axes[1].set_title(f'Target 1 - {i}')
+  axes[1].set_ylabel('Value')
 
-# Expected output:
-# Total: 3 -> [2, 1, 0]
-# Total: 4 -> [2, 1, 1]
+  plt.tight_layout()
+  plt.show()
